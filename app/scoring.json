@@ -1,0 +1,17 @@
+{
+  "weights": {
+    "pain_score": 0.25,
+    "frequency_score": 0.25,
+    "time_cost_score": 0.15,
+    "automation_potential": 0.20,
+    "usage_intent": 0.15
+  },
+  "normalization": "(weighted_mean - 1) / 4 * 100",
+  "missing_scores": "unscored_until_complete",
+  "bands": [
+    {"min": 80, "label": "强项目候选"},
+    {"min": 60, "label": "值得进一步分析"},
+    {"min": 40, "label": "值得观察"},
+    {"min": 0, "label": "低优先级"}
+  ]
+}
