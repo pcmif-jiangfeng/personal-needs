@@ -1,0 +1,23 @@
+# Local configuration
+.env
+
+# Real SQLite user data and SQLite write-ahead logs
+data/
+*.sqlite3
+*.sqlite3-shm
+*.sqlite3-wal
+
+# Python environments, caches, and test output
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+
+# Editor and operating-system files
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+*.log
