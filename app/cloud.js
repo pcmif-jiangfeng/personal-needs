@@ -200,9 +200,15 @@
   }
 
   function mountAuth() {
-    document.head.insertAdjacentHTML('beforeend', `<style>.cloud-auth{position:fixed;inset:0;background:#f5f7f3;z-index:99;display:grid;place-items:center;padding:24px}.cloud-auth[hidden]{display:none}.cloud-auth-card{width:min(440px,100%);background:white;border:1px solid #dce4df;border-radius:20px;padding:30px;box-shadow:0 20px 60px rgba(33,53,45,.12)}.cloud-auth-card h1{font-size:32px}.cloud-auth-card input{width:100%;margin-top:8px;border:1px solid #ccd7d1;border-radius:11px;padding:12px 14px;color:#21352d;background:#fcfdfc;font:inherit;outline:none}.cloud-auth-card input:focus{border-color:#5f8775;box-shadow:0 0 0 3px #e5eee9}.cloud-auth-actions{display:flex;gap:10px;align-items:center;margin-top:20px}.cloud-auth-message{min-height:24px;margin-top:14px;color:#a43b35}.cloud-user{font-size:12px;color:#6d7d75;display:flex;gap:8px;align-items:center}.cloud-user button{padding:8px 10px}</style>`);
-    document.body.insertAdjacentHTML('afterbegin', `<section id="cloud-auth" class="cloud-auth"><form id="cloud-auth-form" class="cloud-auth-card"><div class="eyebrow">Personal needs</div><h1>登录需求发现</h1><p>每个人只会看到自己的记录。</p><div class="field"><label class="legend" for="cloud-email">邮箱</label><input id="cloud-email" type="email" required autocomplete="email"></div><div class="field"><label class="legend" for="cloud-password">密码</label><input id="cloud-password" type="password" minlength="6" required autocomplete="current-password"></div><div class="cloud-auth-actions"><button type="submit">登录</button><button id="cloud-signup" type="button" class="secondary">注册</button></div><p id="cloud-auth-message" class="cloud-auth-message" role="status"></p></form></section>`);
-    const gate = document.querySelector('#cloud-auth'), form = document.querySelector('#cloud-auth-form'), message = document.querySelector('#cloud-auth-message');
+    document.head.insertAdjacentHTML('beforeend', `<style>.cloud-auth{position:fixed;inset:0;background:#f5f7f3;z-index:99;display:grid;place-items:center;padding:24px}.cloud-auth[hidden],.cloud-auth-card[hidden]{display:none}.cloud-auth-card{width:min(440px,100%);background:white;border:1px solid #dce4df;border-radius:20px;padding:30px;box-shadow:0 20px 60px rgba(33,53,45,.12)}.cloud-auth-card h1{font-size:32px}.cloud-auth-card input{width:100%;margin-top:8px;border:1px solid #ccd7d1;border-radius:11px;padding:12px 14px;color:#21352d;background:#fcfdfc;font:inherit;outline:none}.cloud-auth-card input:focus{border-color:#5f8775;box-shadow:0 0 0 3px #e5eee9}.cloud-auth-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:20px}.cloud-auth-link{appearance:none;border:0;background:none;color:#326b59;padding:8px 0;text-decoration:underline;cursor:pointer}.cloud-auth-message{min-height:24px;margin-top:14px;color:#a43b35}.cloud-auth-message[data-kind="success"]{color:#326b59}.cloud-user{font-size:12px;color:#6d7d75;display:flex;gap:8px;align-items:center;flex-wrap:wrap}.cloud-user button{padding:8px 10px}.cloud-delete-account{color:#a43b35}</style>`);
+    document.body.insertAdjacentHTML('afterbegin', `<section id="cloud-auth" class="cloud-auth"><form id="cloud-auth-form" class="cloud-auth-card"><div class="eyebrow">Personal needs</div><h1>登录需求发现</h1><p>每个人只会看到自己的记录。</p><div class="field"><label class="legend" for="cloud-email">邮箱</label><input id="cloud-email" type="email" required autocomplete="email"></div><div class="field"><label class="legend" for="cloud-password">密码</label><input id="cloud-password" type="password" minlength="6" required autocomplete="current-password"></div><div class="cloud-auth-actions"><button type="submit">登录</button><button id="cloud-signup" type="button" class="secondary">注册</button><button id="cloud-forgot-password" type="button" class="cloud-auth-link">忘记密码</button></div><p id="cloud-auth-message" class="cloud-auth-message" role="status"></p></form><form id="cloud-reset-form" class="cloud-auth-card" hidden><div class="eyebrow">Personal needs</div><h1>设置新密码</h1><p>请输入至少 6 位的新密码。</p><div class="field"><label class="legend" for="cloud-new-password">新密码</label><input id="cloud-new-password" type="password" minlength="6" required autocomplete="new-password"></div><div class="field"><label class="legend" for="cloud-confirm-password">确认新密码</label><input id="cloud-confirm-password" type="password" minlength="6" required autocomplete="new-password"></div><div class="cloud-auth-actions"><button type="submit">保存新密码</button><button id="cloud-reset-cancel" type="button" class="secondary">取消</button></div><p id="cloud-reset-message" class="cloud-auth-message" role="status"></p></form></section>`);
+    const gate = document.querySelector('#cloud-auth');
+    const form = document.querySelector('#cloud-auth-form');
+    const resetForm = document.querySelector('#cloud-reset-form');
+    const message = document.querySelector('#cloud-auth-message');
+    const resetMessage = document.querySelector('#cloud-reset-message');
+    const emailInput = document.querySelector('#cloud-email');
+    let resettingPassword = false;
     const authErrorMessage = error => ({
       anonymous_provider_disabled: '请先填写邮箱和密码，再点击注册。',
       email_address_not_authorized: '当前邮件服务不能向这个邮箱发送验证信，请联系管理员配置公共邮件服务。',
@@ -216,28 +222,87 @@
         message.textContent = '请填写有效邮箱和至少 6 位密码。';
         return;
       }
+      message.dataset.kind = '';
       message.textContent = signup ? '正在创建账号…' : '正在登录…';
-      const email = document.querySelector('#cloud-email').value.trim(), password = document.querySelector('#cloud-password').value;
+      const email = emailInput.value.trim(), password = document.querySelector('#cloud-password').value;
       const result = signup
         ? await client.auth.signUp({email,password,options:{emailRedirectTo:location.origin}})
         : await client.auth.signInWithPassword({email,password});
       if (result.error) { message.textContent = authErrorMessage(result.error); return; }
+      message.dataset.kind = 'success';
       message.textContent = signup && !result.data.session ? '注册成功，请打开验证邮件后再登录。' : '';
     };
     form.addEventListener('submit', event => {event.preventDefault();run(false);});
     document.querySelector('#cloud-signup').addEventListener('click', () => run(true));
+    document.querySelector('#cloud-forgot-password').addEventListener('click', async () => {
+      if (!emailInput.reportValidity()) {
+        message.textContent = '请先填写需要找回密码的邮箱。';
+        return;
+      }
+      message.dataset.kind = '';
+      message.textContent = '正在发送重置邮件…';
+      const { error } = await client.auth.resetPasswordForEmail(emailInput.value.trim(), {redirectTo: `${location.origin}/?reset-password=1`});
+      if (error) { message.textContent = authErrorMessage(error); return; }
+      message.dataset.kind = 'success';
+      message.textContent = '重置邮件已发送，请打开邮件中的链接。';
+    });
+    resetForm.addEventListener('submit', async event => {
+      event.preventDefault();
+      if (!resetForm.reportValidity()) return;
+      const password = document.querySelector('#cloud-new-password').value;
+      const confirmation = document.querySelector('#cloud-confirm-password').value;
+      if (password !== confirmation) {
+        resetMessage.textContent = '两次输入的密码不一致。';
+        return;
+      }
+      resetMessage.dataset.kind = '';
+      resetMessage.textContent = '正在更新密码…';
+      const { error } = await client.auth.updateUser({password});
+      if (error) { resetMessage.textContent = authErrorMessage(error); return; }
+      resettingPassword = false;
+      await client.auth.signOut();
+      message.dataset.kind = 'success';
+      message.textContent = '密码已更新，请使用新密码登录。';
+    });
+    document.querySelector('#cloud-reset-cancel').addEventListener('click', async () => {
+      resettingPassword = false;
+      await client.auth.signOut();
+      render();
+    });
     function render() {
-      gate.hidden = Boolean(session);
+      gate.hidden = Boolean(session) && !resettingPassword;
+      form.hidden = resettingPassword;
+      resetForm.hidden = !resettingPassword;
       document.querySelector('.cloud-user')?.remove();
-      if (session) {
-        const userBox = document.createElement('div'), email = document.createElement('span'), logout = document.createElement('button');
+      if (session && !resettingPassword) {
+        const userBox = document.createElement('div'), email = document.createElement('span'), logout = document.createElement('button'), deleteAccount = document.createElement('button');
         userBox.className = 'cloud-user'; email.textContent = session.user.email || '已登录'; logout.type = 'button'; logout.className = 'secondary'; logout.textContent = '退出';
-        userBox.append(email, logout); document.querySelector('header').append(userBox);
+        deleteAccount.type = 'button'; deleteAccount.className = 'secondary cloud-delete-account'; deleteAccount.textContent = '注销账号';
+        userBox.append(email, logout, deleteAccount); document.querySelector('header').append(userBox);
         logout.addEventListener('click', () => client.auth.signOut());
+        deleteAccount.addEventListener('click', async () => {
+          if (!confirm('确定永久注销账号吗？云端记录、主题和自定义标签都会删除，且无法恢复。建议先导出数据。')) return;
+          deleteAccount.disabled = true;
+          deleteAccount.textContent = '正在注销…';
+          const { error } = await client.rpc('delete_own_account');
+          if (error) {
+            deleteAccount.disabled = false;
+            deleteAccount.textContent = '注销账号';
+            alert(`注销失败：${error.message}`);
+            return;
+          }
+          await client.auth.signOut();
+          message.dataset.kind = 'success';
+          message.textContent = '账号及其云端数据已删除。';
+        });
         window.dispatchEvent(new Event('cloud-auth-change'));
       }
     }
-    client.auth.onAuthStateChange((_event, next) => {session = next; render();});
+    client.auth.onAuthStateChange((event, next) => {
+      session = next;
+      if (event === 'PASSWORD_RECOVERY') resettingPassword = true;
+      render();
+    });
     client.auth.getSession().then(({data}) => {session = data.session; readyResolve(); render();});
 
     document.addEventListener('click', async event => {
