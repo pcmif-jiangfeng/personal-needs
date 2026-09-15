@@ -26,7 +26,12 @@
 
   async function checked(query) {
     const { data, error, count } = await query;
-    if (error) throw new Error(error.message);
+    if (error) {
+      if (error.code === '23505' && error.message?.includes('themes_user_id_name_key')) {
+        throw new Error('你已经建立过同名主题，请直接使用下方已有主题，或换一个名称。');
+      }
+      throw new Error(error.message);
+    }
     return { data, count };
   }
 
@@ -200,6 +205,8 @@
   }
 
   function mountAuth() {
+    const storageNote = document.querySelector('#storage-note');
+    if (storageNote) storageNote.textContent = '数据保存在你的云端账号中，可在手机和电脑之间同步';
     document.head.insertAdjacentHTML('beforeend', `<style>.cloud-auth{position:fixed;inset:0;background:#f5f7f3;z-index:99;display:grid;place-items:center;padding:24px}.cloud-auth[hidden],.cloud-auth-card[hidden]{display:none}.cloud-auth-card{width:min(440px,100%);background:white;border:1px solid #dce4df;border-radius:20px;padding:30px;box-shadow:0 20px 60px rgba(33,53,45,.12)}.cloud-auth-card h1{font-size:32px}.cloud-auth-card input{width:100%;margin-top:8px;border:1px solid #ccd7d1;border-radius:11px;padding:12px 14px;color:#21352d;background:#fcfdfc;font:inherit;outline:none}.cloud-auth-card input:focus{border-color:#5f8775;box-shadow:0 0 0 3px #e5eee9}.cloud-auth-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:20px}.cloud-auth-link{appearance:none;border:0;background:none;color:#326b59;padding:8px 0;text-decoration:underline;cursor:pointer}.cloud-auth-message{min-height:24px;margin-top:14px;color:#a43b35}.cloud-auth-message[data-kind="success"]{color:#326b59}.cloud-user{font-size:12px;color:#6d7d75;display:flex;gap:8px;align-items:center;flex-wrap:wrap}.cloud-user button{padding:8px 10px}.cloud-delete-account{color:#a43b35}</style>`);
     document.body.insertAdjacentHTML('afterbegin', `<section id="cloud-auth" class="cloud-auth"><form id="cloud-auth-form" class="cloud-auth-card"><div class="eyebrow">Personal needs</div><h1>登录需求发现</h1><p>每个人只会看到自己的记录。</p><div class="field"><label class="legend" for="cloud-email">邮箱</label><input id="cloud-email" type="email" required autocomplete="email"></div><div class="field"><label class="legend" for="cloud-password">密码</label><input id="cloud-password" type="password" minlength="6" required autocomplete="current-password"></div><div class="cloud-auth-actions"><button type="submit">登录</button><button id="cloud-signup" type="button" class="secondary">注册</button><button id="cloud-forgot-password" type="button" class="cloud-auth-link">忘记密码</button></div><p id="cloud-auth-message" class="cloud-auth-message" role="status"></p></form><form id="cloud-reset-form" class="cloud-auth-card" hidden><div class="eyebrow">Personal needs</div><h1>设置新密码</h1><p>请输入至少 6 位的新密码。</p><div class="field"><label class="legend" for="cloud-new-password">新密码</label><input id="cloud-new-password" type="password" minlength="6" required autocomplete="new-password"></div><div class="field"><label class="legend" for="cloud-confirm-password">确认新密码</label><input id="cloud-confirm-password" type="password" minlength="6" required autocomplete="new-password"></div><div class="cloud-auth-actions"><button type="submit">保存新密码</button><button id="cloud-reset-cancel" type="button" class="secondary">取消</button></div><p id="cloud-reset-message" class="cloud-auth-message" role="status"></p></form></section>`);
     const gate = document.querySelector('#cloud-auth');
