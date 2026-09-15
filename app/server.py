@@ -35,9 +35,9 @@ class Handler(BaseHTTPRequestHandler):
         path = target.path
         if path == "/":
             self.respond(200, (ROOT / "app" / "index.html").read_bytes(), "text/html; charset=utf-8")
-        elif path in {"/manifest.webmanifest", "/service-worker.js", "/cloud-config.js", "/cloud.js", "/icons/app-icon.svg"}:
+        elif path in {"/manifest.json", "/service-worker.js", "/cloud-config.js", "/cloud.js", "/icons/app-icon.svg"}:
             static_files = {
-                "/manifest.webmanifest": (ROOT / "app" / "manifest.webmanifest", "application/manifest+json; charset=utf-8"),
+                "/manifest.json": (ROOT / "app" / "manifest.json", "application/manifest+json; charset=utf-8"),
                 "/service-worker.js": (ROOT / "app" / "service-worker.js", "text/javascript; charset=utf-8"),
                 "/cloud-config.js": (ROOT / "app" / "cloud-config.js", "text/javascript; charset=utf-8"),
                 "/cloud.js": (ROOT / "app" / "cloud.js", "text/javascript; charset=utf-8"),
