@@ -146,6 +146,30 @@ create policy "record_tags_delete_own" on public.record_tags for delete to authe
   exists (select 1 from public.records where records.id = record_id and records.user_id = (select auth.uid()))
 );
 
+create or replace function public.delete_own_account()
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  current_user_id uuid := auth.uid();
+begin
+  if current_user_id is null then
+    raise exception 'Authentication required';
+  end if;
+
+  delete from auth.users where id = current_user_id;
+  if not found then
+    raise exception 'Account not found';
+  end if;
+end;
+$$;
+
+revoke all on function public.delete_own_account() from public;
+revoke all on function public.delete_own_account() from anon;
+grant execute on function public.delete_own_account() to authenticated;
+
 grant usage on schema public to authenticated;
 grant select, insert, update, delete on public.themes, public.records, public.tags, public.record_tags to authenticated;
 grant usage, select on all sequences in schema public to authenticated;
