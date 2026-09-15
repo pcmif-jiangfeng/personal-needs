@@ -214,6 +214,7 @@
       email_address_not_authorized: '当前邮件服务不能向这个邮箱发送验证信，请联系管理员配置公共邮件服务。',
       email_not_confirmed: '邮箱尚未验证，请先打开验证邮件。',
       invalid_credentials: '邮箱或密码不正确。',
+      email_exists: '这个邮箱已经注册，请直接登录。',
       user_already_exists: '这个邮箱已经注册，请直接登录。',
       weak_password: '密码强度不足，请换一个更安全的密码。'
     }[error.code] || error.message || '操作失败，请稍后重试。');
@@ -229,6 +230,13 @@
         ? await client.auth.signUp({email,password,options:{emailRedirectTo:location.origin}})
         : await client.auth.signInWithPassword({email,password});
       if (result.error) { message.textContent = authErrorMessage(result.error); return; }
+      const obfuscatedExistingUser = signup && !result.data.session
+        && Array.isArray(result.data.user?.identities) && result.data.user.identities.length === 0;
+      if (obfuscatedExistingUser) {
+        message.dataset.kind = '';
+        message.textContent = '如果这个邮箱已经注册，请直接登录；如未注册，请打开验证邮件完成注册。';
+        return;
+      }
       message.dataset.kind = 'success';
       message.textContent = signup && !result.data.session ? '注册成功，请打开验证邮件后再登录。' : '';
     };
