@@ -203,11 +203,25 @@
     document.head.insertAdjacentHTML('beforeend', `<style>.cloud-auth{position:fixed;inset:0;background:#f5f7f3;z-index:99;display:grid;place-items:center;padding:24px}.cloud-auth[hidden]{display:none}.cloud-auth-card{width:min(440px,100%);background:white;border:1px solid #dce4df;border-radius:20px;padding:30px;box-shadow:0 20px 60px rgba(33,53,45,.12)}.cloud-auth-card h1{font-size:32px}.cloud-auth-card input{width:100%;margin-top:8px;border:1px solid #ccd7d1;border-radius:11px;padding:12px 14px;color:#21352d;background:#fcfdfc;font:inherit;outline:none}.cloud-auth-card input:focus{border-color:#5f8775;box-shadow:0 0 0 3px #e5eee9}.cloud-auth-actions{display:flex;gap:10px;align-items:center;margin-top:20px}.cloud-auth-message{min-height:24px;margin-top:14px;color:#a43b35}.cloud-user{font-size:12px;color:#6d7d75;display:flex;gap:8px;align-items:center}.cloud-user button{padding:8px 10px}</style>`);
     document.body.insertAdjacentHTML('afterbegin', `<section id="cloud-auth" class="cloud-auth"><form id="cloud-auth-form" class="cloud-auth-card"><div class="eyebrow">Personal needs</div><h1>登录需求发现</h1><p>每个人只会看到自己的记录。</p><div class="field"><label class="legend" for="cloud-email">邮箱</label><input id="cloud-email" type="email" required autocomplete="email"></div><div class="field"><label class="legend" for="cloud-password">密码</label><input id="cloud-password" type="password" minlength="6" required autocomplete="current-password"></div><div class="cloud-auth-actions"><button type="submit">登录</button><button id="cloud-signup" type="button" class="secondary">注册</button></div><p id="cloud-auth-message" class="cloud-auth-message" role="status"></p></form></section>`);
     const gate = document.querySelector('#cloud-auth'), form = document.querySelector('#cloud-auth-form'), message = document.querySelector('#cloud-auth-message');
+    const authErrorMessage = error => ({
+      anonymous_provider_disabled: '请先填写邮箱和密码，再点击注册。',
+      email_address_not_authorized: '当前邮件服务不能向这个邮箱发送验证信，请联系管理员配置公共邮件服务。',
+      email_not_confirmed: '邮箱尚未验证，请先打开验证邮件。',
+      invalid_credentials: '邮箱或密码不正确。',
+      user_already_exists: '这个邮箱已经注册，请直接登录。',
+      weak_password: '密码强度不足，请换一个更安全的密码。'
+    }[error.code] || error.message || '操作失败，请稍后重试。');
     const run = async signup => {
+      if (!form.reportValidity()) {
+        message.textContent = '请填写有效邮箱和至少 6 位密码。';
+        return;
+      }
       message.textContent = signup ? '正在创建账号…' : '正在登录…';
       const email = document.querySelector('#cloud-email').value.trim(), password = document.querySelector('#cloud-password').value;
-      const result = signup ? await client.auth.signUp({email,password}) : await client.auth.signInWithPassword({email,password});
-      if (result.error) { message.textContent = result.error.message; return; }
+      const result = signup
+        ? await client.auth.signUp({email,password,options:{emailRedirectTo:location.origin}})
+        : await client.auth.signInWithPassword({email,password});
+      if (result.error) { message.textContent = authErrorMessage(result.error); return; }
       message.textContent = signup && !result.data.session ? '注册成功，请打开验证邮件后再登录。' : '';
     };
     form.addEventListener('submit', event => {event.preventDefault();run(false);});
