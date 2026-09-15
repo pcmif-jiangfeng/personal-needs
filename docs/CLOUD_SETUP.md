@@ -15,6 +15,8 @@
 
 脚本会创建系统标签、每用户数据归属字段、更新时间触发器、原始表达保护，以及只能访问本人数据的 RLS 策略。
 
+已经执行过旧版 `schema.sql` 的项目，再单独执行一次 `supabase/account_features.sql`。该脚本会创建只能删除当前登录用户自身的 `delete_own_account()` 函数，用于网页中的“注销账号”；删除账号时，关联的个人记录会通过外键级联删除。
+
 ## 不要提交的内容
 
 - 数据库密码
@@ -34,8 +36,10 @@ Supabase Project URL 和前端 publishable / anon key 会在接入登录页面�
 4. 等待部署完成，记录 Render 提供的 `https://...onrender.com` 地址。
 5. 回到 Supabase，进入 **Authentication → URL Configuration**。
 6. 将 **Site URL** 设置为 Render 地址，并在 **Redirect URLs** 中加入同一个地址和 `/**` 通配路径。
-7. 使用未注册的邮箱创建测试账号，完成邮件确认并登录。
+7. 使用未注册的邮箱创建测试账号，完成邮件确认并登录。未配置 Custom SMTP 时可以暂时关闭 Confirm email 进行功能测试；忘记密码仍需要可用的邮件服务。
 8. 再创建第二个测试账号，确认两个账号互相看不到记录、主题和自定义标签。
+9. 点击“忘记密码”，确认邮件链接能打开公网网站中的新密码页面。
+10. 使用测试账号点击“注销账号”，确认账号和该账号的数据均已删除。
 
 云端模式使用浏览器可见的 Project URL 和 Publishable key，并由 RLS 执行授权。不要把数据库密码、service role key 或 PostgreSQL connection string 放进 `app/`。
 
