@@ -1,0 +1,12 @@
+{
+  "name": "需求发现",
+  "short_name": "需求发现",
+  "description": "记录真实摩擦，发现重复需求。",
+  "lang": "zh-CN",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f5f7f3",
+  "theme_color": "#21483f",
+  "icons": [{"src": "/icons/app-icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable"}]
+}

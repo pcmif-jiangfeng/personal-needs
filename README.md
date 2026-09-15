@@ -201,7 +201,7 @@ app/
   scoring.json        机会评分配置
   cloud-config.js     可公开的 Supabase 项目配置与云端启用规则
   cloud.js            登录、会话和云端数据适配器
-  manifest.webmanifest / service-worker.js / icons/
+  manifest.json / service-worker.js / icons/
                       Web 应用信息、页面缓存与图标
 supabase/schema.sql   PostgreSQL 表、触发器与 RLS 策略
 render.yaml           Render 静态站点部署配置
