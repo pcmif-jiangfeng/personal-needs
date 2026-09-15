@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: personal-needs
+    runtime: static
+    buildCommand: echo "No build required"
+    staticPublishPath: ./app
+    headers:
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
+      - path: /*
+        name: Referrer-Policy
+        value: strict-origin-when-cross-origin
+      - path: /service-worker.js
+        name: Cache-Control
+        value: no-cache

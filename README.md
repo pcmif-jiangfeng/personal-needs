@@ -72,14 +72,24 @@ python3 -m venv .venv
 
 ### 2. 开启私有 HTTPS 地址
 
-在电脑终端执行：
+先在一个终端窗口启动应用，并保持运行：
+
+```bash
+python -m app.server
+```
+
+再在另一个终端窗口执行：
 
 ```bash
 tailscale serve --bg --yes http://127.0.0.1:8765
 tailscale serve status
 ```
 
+第一次执行时，如果终端提示 `Serve is not enabled on your tailnet`，请打开它显示的 Tailscale 官方链接，登录同一个账号并点击 **Enable Serve**，完成后重新执行上面的两条命令。
+
 终端会显示形如 `https://设备名.网络名.ts.net/` 的地址。用手机浏览器打开该地址即可使用。
+
+当前这台电脑生成的实际地址是：<https://qingfengwu.tailcb5008.ts.net/>。这个地址由 `tailscale serve status` 返回，只对登录到你同一 Tailscale 网络的设备有效；其他用户需要在自己的电脑上部署并生成自己的地址。
 
 如需停止共享：
 
@@ -106,6 +116,24 @@ python -m app.server --host 0.0.0.0 --port 8765
 然后用手机访问 `http://电脑的局域网IP:8765/`。Windows 防火墙需要允许 Python 通过专用网络。由于局域网地址使用 HTTP，更适合临时访问，不建议作为 PWA 安装方式。
 
 </details>
+
+## 多用户云端部署
+
+仓库已包含可选的 Supabase 云端模式。部署到 Render 的 `*.onrender.com` 域名后，页面会自动显示邮箱注册与登录，并通过 Supabase RLS 让每位用户只能访问自己的记录。本地 `localhost` 和 Tailscale 使用方式仍连接本机 SQLite。
+
+部署前先在 Supabase SQL Editor 执行 `supabase/schema.sql`，再把最新代码上传到 GitHub。Render 可以直接读取根目录的 `render.yaml` 创建静态站点。获得 Render HTTPS 地址后，需要在 Supabase **Authentication → URL Configuration** 中把 **Site URL** 和允许的 **Redirect URL** 设置为该地址。
+
+完整步骤见 [多用户云端部署准备](docs/CLOUD_SETUP.md)。`cloud-config.js` 中只包含允许放在浏览器里的 Project URL 和 Publishable key，不包含数据库密码或 service role key。
+
+### 访问故障排查
+
+如果 HTTPS 域名暂时打不开，可以先确认手机是否能连接电脑上的服务。电脑终端执行：
+
+```bash
+tailscale ip -4
+```
+
+假设返回 `100.x.x.x`，手机在 Tailscale 已连接的情况下访问：`http://100.x.x.x:8765/`。这个地址只用于排查网络连接，不支持正式 PWA 安装；正式使用仍应打开 `https://设备名.网络名.ts.net/`。
 
 ## 第一次使用：先记一条真实问题
 
@@ -171,8 +199,12 @@ app/
   db.py / schema.sql  数据库初始化与结构
   config.py           本机配置
   scoring.json        机会评分配置
+  cloud-config.js     可公开的 Supabase 项目配置与云端启用规则
+  cloud.js            登录、会话和云端数据适配器
   manifest.webmanifest / service-worker.js / icons/
                       Web 应用信息、页面缓存与图标
+supabase/schema.sql   PostgreSQL 表、触发器与 RLS 策略
+render.yaml           Render 静态站点部署配置
 data/                 本地用户数据（自动创建，不提交）
 tests/                自动化测试
 docs/                 需求、工程决策、安全与部署说明
@@ -190,7 +222,7 @@ python -m unittest discover -s tests -v
 
 ## 当前限制与后续方向
 
-- 面向单人、本地数据使用，暂无应用账号、独立多设备同步和自动备份。手机通过 Tailscale 使用的是电脑上的同一数据库。
+- 本地模式面向单人使用；云端模式已接入 Supabase 邮箱账号和用户数据隔离，但需要完成 Render 部署后才能公开使用。
 - 主题归类需要手动完成，尚无 AI 自动聚类；生成 Prompt 后需自行提交给 Codex，不会自动创建或开发项目。
 - 界面目前支持搜索与排序，尚无独立的日期／标签筛选和需求状态流转操作。
 - 已支持 PWA 安装和基础页面缓存，但服务停止后无法读取或保存需求数据，不支持完整离线使用。

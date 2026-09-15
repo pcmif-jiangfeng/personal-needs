@@ -1,5 +1,5 @@
-const CACHE_NAME = 'personal-needs-shell-v1';
-const APP_SHELL = ['/', '/manifest.webmanifest', '/icons/app-icon.svg'];
+const CACHE_NAME = 'personal-needs-shell-v2';
+const APP_SHELL = ['/', '/manifest.webmanifest', '/cloud-config.js', '/cloud.js', '/icons/app-icon.svg'];
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(APP_SHELL)));
   self.skipWaiting();
